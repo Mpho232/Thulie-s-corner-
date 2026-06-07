@@ -1,1 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Storefront - Browse Products</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <nav class="bg-white shadow p-4 flex justify-between items-center max-w-7xl mx-auto rounded-b-lg">
+    <a href="products.html" class="text-xl font-bold text-blue-600">MegaStore</a>
+    <div class="space-x-4 flex items-center">
+      <a href="products.html" class="hover:text-blue-600 font-medium">Shop</a>
+      <a href="cart.html" class="relative hover:text-blue-600 font-medium">
+        Cart 🛒 <span id="cart-count" class="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 absolute -top-2 -right-3">0</span>
+      </a>
+      <a href="admin-dashboard.html" class="text-sm text-gray-500 border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Admin Control</a>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto p-4 md:p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+    <aside class="bg-white p-4 rounded-xl shadow h-fit space-y-4">
+      <h3 class="font-bold text-lg border-b pb-2">Filter & Search</h3>
+      <div>
+        <label class="block text-sm font-medium mb-1">Search Products</label>
+        <input type="text" id="search-input" placeholder="Search Products..." class="w-full border p-2 rounded focus:outline-blue-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Category</label>
+        <select id="category-filter" class="w-full border p-2 rounded focus:outline-blue-500">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Max Price (P)</label>
+        <input type="number" id="price-filter" placeholder="e.g. 300" class="w-full border p-2 rounded focus:outline-blue-500">
+      </div>
+    </aside>
+
+    <section class="md:col-span-3">
+      <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        </div>
+    </section>
+  </main>
+
+  <script src="js/products.js"></script>
+  <script>
+    // Initialize Category dropdown
+    const catFilter = document.getElementById('category-filter');
+    getCategories().forEach(cat => {
+      catFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
+    });
+
+    function renderProducts() {
+      const grid = document.getElementById('product-grid');
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const category = catFilter.value;
+      const maxPrice = parseFloat(document.getElementById('price-filter').value) || Infinity;
+
+      grid.innerHTML = '';
+      const filtered = getProducts().filter(p => {
+        return p.name.toLowerCase().includes(search) &&
+               (!category || p.category === category) &&
+               (p.price <= maxPrice);
+      });
+
+      if(filtered.length === 0) {
+        grid.innerHTML = `<p class="col-span-full text-center py-12 text-gray-500">No products match your criteria.</p>`;
+        return;
+      }
+
+      filtered.forEach(product => {
+        const isStock = product.stock > 0;
+        grid.innerHTML += `
+          <div class="bg-white border rounded-xl shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition">
+            <img src="${product.image}" alt="${product.name}" class="h-48 w-full object-cover cursor-pointer" onclick="window.location.href='product-details.html?id=${product.id}'">
+            <div class="p-4 flex-grow flex flex-col justify-between">
+              <div>
+                <span class="text-xs font-semibold text-blue-500 uppercase tracking-wide">${product.category}</span>
+                <h4 class="font-bold text-lg mt-1 cursor-pointer hover:text-blue-600" onclick="window.location.href='product-details.html?id=${product.id}'">${product.name}</h4>
+                <p class="text-sm text-gray-500 mt-1 line-clamp-2">${product.description}</p>
+              </div>
+              <div class="mt-4">
+                <div class="flex justify-between items-center mb-3">
+                  <span class="text-xl font-bold text-gray-900">P${product.price}</span>
+                  <span class="text-xs px-2 py-1 rounded font-semibold ${isStock ? 'bg-green-100 text-green-800':'bg-red-100 text-red-800'}">
+                    ${isStock ? 'In Stock' : 'Out of Stock'}
+                  </span>
+                </div>
+                <button 
+                  onclick="addToCart('${product.id}')" 
+                  ${!isStock ? 'disabled' : ''} 
+                  class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                  Order Now
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Dynamic filtering listeners
+    document.getElementById('search-input').addEventListener('input', renderProducts);
+    catFilter.addEventListener('change', renderProducts);
+    document.getElementById('price-filter').addEventListener('input', renderProducts);
+
+    // Initial load
+    renderProducts();
+
+    // Sync Cart Counter
+    function updateCartCount() {
+      const cart = JSON.parse(localStorage.getItem('cart')) || [];
+      const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+      document.getElementById('cart-count').innerText = totalItems;
+    }
+
+    function addToCart(id) {
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      const products = getProducts();
+      const product = products.find(p => p.id === id);
+
+      if (!product || product.stock <= 0) return;
+
+      const cartItem = cart.find(item => item.id === id);
+      if (cartItem) {
+        if(cartItem.quantity < product.stock) {
+          cartItem.quantity++;
+        } else {
+          alert("Cannot add more items than available in stock.");
+          return;
+        }
+      } else {
+        cart.push({ id: id, quantity: 1 });
+      }
+
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCartCount();
+      alert(`${product.name} has been added to your cart!`);
+    }
+
+    updateCartCount();
+  </script>
+</body>
+</html>
 
