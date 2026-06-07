@@ -1,1 +1,9 @@
+[
+  {"id": "cat-1", "name": "Electronics"},
+  {"id": "cat-2", "name": "Fashion"},
+  {"id": "cat-3", "name": "Home & Living"},
+  {"id": "cat-4", "name": "Office Supplies"},
+  {"id": "cat-5", "name": "Groceries"},
+  {"id": "cat-6", "name": "Accessories"}
+]
 
