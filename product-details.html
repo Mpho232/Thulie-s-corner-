@@ -1,1 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Product Details</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <main class="max-w-5xl mx-auto p-6 bg-white shadow mt-8 rounded-xl">
+    <a href="products.html" class="text-blue-600 hover:underline mb-6 inline-block">← Back to Shop</a>
+    
+    <div id="details-container" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      </div>
+  </main>
+
+  <script src="js/products.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get('id');
+    const product = getProducts().find(p => p.id === productId);
+
+    const container = document.getElementById('details-container');
+
+    if (!product) {
+      container.innerHTML = `<p class="text-red-500 font-bold col-span-2">Product not found.</p>`;
+    } else {
+      // Setup default placeholder configuration if multiple images missing
+      const gallery = product.images && product.images.length ? product.images : [product.image];
+      
+      container.innerHTML = `
+        <div>
+          <img id="main-photo" src="${product.image}" class="w-full h-96 object-cover rounded-xl shadow-inner mb-4" alt="${product.name}">
+          <div class="flex gap-2 overflow-x-auto" id="thumbnail-row">
+             ${gallery.map(img => `<img src="${img}" class="w-20 h-20 object-cover border rounded cursor-pointer hover:border-blue-500 transition" onclick="document.getElementById('main-photo').src='${img}'">`).join('')}
+          </div>
+        </div>
+        <div class="flex flex-col justify-between">
+          <div>
+            <span class="bg-gray-200 text-gray-700 text-xs px-2.5 py-1 rounded font-bold uppercase">${product.category}</span>
+            <h1 class="text-3xl font-bold mt-2 text-gray-900">${product.name}</h1>
+            <p class="text-xl font-bold text-blue-600 mt-2">P${product.price}</p>
+            <p class="text-sm mt-1 font-semibold ${product.stock > 0 ? 'text-green-600':'text-red-600'}">
+                Availability: ${product.stock > 0 ? `${product.stock} units remaining` : 'Out of Stock'}
+            </p>
+            
+            <h3 class="font-bold mt-6 text-gray-700 border-b pb-1">Description</h3>
+            <p class="text-gray-600 mt-2">${product.description}</p>
+            
+            <h3 class="font-bold mt-6 text-gray-700 border-b pb-1">Specifications</h3>
+            <p class="text-gray-600 mt-2 text-sm italic">${product.specs || 'No specific attributes provided.'}</p>
+          </div>
+
+          <button onclick="addFromDetails('${product.id}')" ${product.stock <= 0 ? 'disabled':''} class="mt-8 w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition disabled:opacity-50">
+            Order Now
+          </button>
+        </div>
+      `;
+    }
+
+    function addFromDetails(id) {
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      const item = cart.find(i => i.id === id);
+      if(item) {
+        if(item.quantity < product.stock) item.quantity++;
+        else { alert("Max inventory allocation reached."); return; }
+      } else {
+        cart.push({id: id, quantity: 1});
+      }
+      localStorage.setItem('cart', JSON.stringify(cart));
+      alert("Added successfully!");
+    }
+  </script>
+</body>
+</html>
 
