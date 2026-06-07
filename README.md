@@ -1,1 +1,0 @@
-# Thulie-s-corner-
